@@ -142,7 +142,7 @@ O script irá:
 
    ```env
    # Banco local (Docker): use host "localhost"
-   DATABASE_URL=postgresql://openmonetis:openmonetis_dev_password@localhost:5432/openmonetis_db
+   DATABASE_URL=postgresql://openmonetis:SUA_SENHA_FORTE@localhost:5432/openmonetis_db
 
    # Banco remoto (Supabase, Neon, etc): use a URL completa do provider
    # DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
@@ -245,7 +245,7 @@ Copie `.env.example` para `.env` e configure:
 ### Obrigatórias
 
 ```env
-DATABASE_URL=postgresql://openmonetis:openmonetis_dev_password@localhost:5432/openmonetis_db
+DATABASE_URL=postgresql://openmonetis:SUA_SENHA_FORTE@localhost:5432/openmonetis_db
 BETTER_AUTH_SECRET=seu-secret-aqui    # openssl rand -base64 32
 BETTER_AUTH_URL=http://localhost:3000
 ```
@@ -255,7 +255,7 @@ BETTER_AUTH_URL=http://localhost:3000
 ```env
 # PostgreSQL (Docker local)
 POSTGRES_USER=openmonetis
-POSTGRES_PASSWORD=openmonetis_dev_password
+POSTGRES_PASSWORD=SUA_SENHA_FORTE
 POSTGRES_DB=openmonetis_db
 
 # Multi-domínio (landing-only no domínio público)

@@ -1,20 +1,15 @@
 # Docker Compose para Next.js + PostgreSQL
 name: openmonetis
 
-# MODOS DE USO:
-# 1. Banco LOCAL (PostgreSQL em container):
-#    - Configure DATABASE_URL com host "db" no .env
-#    - Execute: docker compose up
+# Tudo local: a imagem do app é construída a partir deste repositório e o
+# PostgreSQL roda em container. Nenhuma imagem de terceiros além das oficiais
+# node:22-alpine e postgres:18-alpine.
 #
-# 2. Banco REMOTO (ex: Supabase, Neon, etc):
-#    - Configure DATABASE_URL com a URL do banco remoto no .env
-#    - Execute: docker compose up app (apenas o serviço app)
-#
-# 3. Para parar todos os serviços:
-#    - Execute: docker compose down
-#
-# 4. Para remover volumes (CUIDADO: apaga dados do banco local):
-#    - Execute: docker compose down -v
+# USO:
+# 1. Subir (constrói a imagem na primeira vez): docker compose up --build -d
+# 2. Ver logs:                                   docker compose logs -f app
+# 3. Parar:                                      docker compose down
+# 4. Apagar TAMBÉM os dados do banco (CUIDADO):  docker compose down -v
 
 services:
   # ============================================
@@ -27,13 +22,14 @@ services:
 
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-openmonetis}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openmonetis_dev_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
       POSTGRES_DB: ${POSTGRES_DB:-openmonetis_db}
       PGDATA: /var/lib/postgresql/data
       POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
 
     ports:
-      - "${DB_PORT:-5432}:5432"
+      # Exposto apenas para a própria máquina (não acessível pela rede)
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -63,7 +59,11 @@ services:
   # Serviço: Aplicação Next.js
   # ============================================
   app:
-    image: felipegcoutinho/openmonetis:latest
+    # Build a partir do código deste repositório (nunca usar imagem de terceiros)
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openmonetis-local:latest
 
     container_name: openmonetis_app
     restart: unless-stopped
@@ -74,8 +74,9 @@ services:
     environment:
       NODE_ENV: production
 
-      # Banco local: use host "db" | Banco remoto: URL completa do provider
-      DATABASE_URL: ${DATABASE_URL}
+      # Conecta no container "db" pela rede interna do Docker.
+      # O DATABASE_URL do .env (localhost) é só para ferramentas fora do Docker.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-openmonetis}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-openmonetis_db}
 
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
@@ -110,7 +111,7 @@ services:
         sleep 5
 
         echo "Rodando migrations..."
-        pnpm db:push || echo "Migrations falharam ou já estão atualizadas"
+        ./node_modules/.bin/drizzle-kit push || echo "Migrations falharam ou já estão atualizadas"
 
         echo "Iniciando aplicação Next.js..."
         node server.js

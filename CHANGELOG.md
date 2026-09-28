@@ -7,6 +7,25 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+### Removido
+
+- Privacidade: `@vercel/analytics` e `@vercel/speed-insights` removidos do layout raiz e das dependências
+- Landing: métricas de stars/forks deixam de consultar a API do GitHub do repositório original (`fetchGitHubStats` removido)
+- CI: workflow `docker-publish.yml` de publicação no Docker Hub removido
+
+### Alterado
+
+- Docker: serviço `app` passa a ser construído a partir do código local (`build: .`) em vez de baixar a imagem pública `felipegcoutinho/openmonetis:latest`
+- Docker: `POSTGRES_PASSWORD` agora é obrigatório (sem senha padrão) e a porta do PostgreSQL fica exposta apenas em `127.0.0.1`
+- Docker: o app monta a `DATABASE_URL` interna (host `db`) a partir das variáveis `POSTGRES_*`; o `DATABASE_URL` do `.env` fica reservado para ferramentas fora do Docker
+- Docker: versão do pnpm fixada em `10.33.0` no `Dockerfile` (antes `pnpm@latest`)
+- Setup: `setup.mjs` gera senha aleatória para o PostgreSQL local; `.env.example` e README deixam de trazer senha padrão
+
+### Corrigido
+
+- Docker: migrations na inicialização do container chamam `drizzle-kit push` diretamente; `pnpm db:push` falhava com `ERR_PNPM_IGNORED_BUILDS` e as tabelas não eram criadas
+- Build: adicionado `babel-plugin-react-compiler` como dependência de desenvolvimento, exigido por `reactCompiler: true` no `next.config.ts`
+
 ## [2.0.2] - 2026-03-25
 
 ### Adicionado

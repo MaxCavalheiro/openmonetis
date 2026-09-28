@@ -24,7 +24,6 @@ import {
 	whoIsItForItems,
 } from "@/features/landing/constants";
 import { landingImages } from "@/features/landing/images";
-import { fetchGitHubStats } from "@/features/landing/queries";
 import { AnimatedThemeToggler } from "@/shared/components/animated-theme-toggler";
 import { Logo } from "@/shared/components/logo";
 import { Badge } from "@/shared/components/ui/badge";
@@ -34,10 +33,9 @@ import { DotPattern } from "@/shared/components/ui/dot-pattern";
 import { getOptionalUserSession } from "@/shared/lib/auth/server";
 
 export default async function Page() {
-	const [session, headersList, githubStats] = await Promise.all([
+	const [session, headersList] = await Promise.all([
 		getOptionalUserSession(),
 		headers(),
-		fetchGitHubStats(),
 	]);
 	const hostname = headersList.get("host")?.replace(/:\d+$/, "");
 	const publicDomain = process.env.PUBLIC_DOMAIN?.replace(
@@ -45,7 +43,7 @@ export default async function Page() {
 		"",
 	).replace(/:\d+$/, "");
 	const isPublicDomain = !!(publicDomain && hostname === publicDomain);
-	const metricsItems = getMetricsItems(githubStats.stars, githubStats.forks);
+	const metricsItems = getMetricsItems();
 
 	return (
 		<div className="flex min-h-screen flex-col">

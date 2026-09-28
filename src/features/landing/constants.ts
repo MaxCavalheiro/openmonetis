@@ -11,7 +11,6 @@ import {
 	RiEyeOffLine,
 	RiFileTextLine,
 	RiFlashlightLine,
-	RiGitBranchLine,
 	RiLayoutGridLine,
 	RiLineChartLine,
 	RiLockLine,
@@ -21,7 +20,6 @@ import {
 	RiRobot2Line,
 	RiShieldCheckLine,
 	RiSmartphoneLine,
-	RiStarLine,
 	RiTeamLine,
 	RiTimeLine,
 	RiWalletLine,
@@ -277,7 +275,7 @@ export const whoIsItForItems: FeatureItem[] = [
 	},
 ];
 
-export function getMetricsItems(stars: number, forks: number) {
+export function getMetricsItems() {
 	return [
 		{
 			icon: RiLayoutGridLine,
@@ -290,18 +288,6 @@ export function getMetricsItems(stars: number, forks: number) {
 			value: "100%",
 			label: "Self-hosted",
 			colorVar: "var(--data-1)",
-		},
-		{
-			icon: RiStarLine,
-			value: `${stars}`,
-			label: "Stars no GitHub",
-			colorVar: "var(--data-4)",
-		},
-		{
-			icon: RiGitBranchLine,
-			value: `${forks}`,
-			label: "Forks no GitHub",
-			colorVar: "var(--data-3)",
 		},
 	];
 }

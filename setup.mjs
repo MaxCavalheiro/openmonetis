@@ -11,6 +11,9 @@ import { writeFileSync, existsSync } from "fs";
 import { randomBytes } from "crypto";
 import { resolve, join } from "path";
 
+// Senha aleatória para o PostgreSQL local (nunca usar senha padrão)
+const postgresPassword = randomBytes(24).toString("hex");
+
 // ─── Cores e símbolos ────────────────────────────────────────────────────────
 
 const c = {
@@ -153,7 +156,7 @@ if (dockerAvailable) {
   } else {
     useLocalDocker = true;
     databaseUrl =
-      "postgresql://openmonetis:openmonetis_dev_password@localhost:5432/openmonetis_db";
+      `postgresql://openmonetis:${postgresPassword}@localhost:5432/openmonetis_db`;
     console.log(`${sym.ok} Banco local selecionado`);
   }
 } else {
@@ -263,7 +266,7 @@ const envContent = [
   "",
   "# === PostgreSQL (Docker local) ===",
   "POSTGRES_USER=openmonetis",
-  "POSTGRES_PASSWORD=openmonetis_dev_password",
+  `POSTGRES_PASSWORD=${postgresPassword}`,
   "POSTGRES_DB=openmonetis_db",
   "",
   "# === Multi-domínio ===",
