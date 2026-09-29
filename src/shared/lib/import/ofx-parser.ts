@@ -1,3 +1,4 @@
+import { ensureUniqueExternalIds } from "./external-id";
 import type { ImportedTransaction, ImportStatement } from "./types";
 
 // Extrai o valor de uma tag leaf do OFX SGML: <TAG>valor
@@ -44,16 +45,38 @@ export function parseOfx(content: string): ImportStatement {
 		const transactionType =
 			amount > 0 || trnType === "CREDIT" ? "income" : "expense";
 
+		const description = memo ?? name ?? "";
+
 		return {
-			externalId: fitId,
+			externalId: buildInstallmentExternalId(fitId, description),
 			date: parseOfxDate(dtPosted),
 			amount: Math.abs(amount),
-			description: memo ?? name ?? "",
+			description,
 			transactionType,
 		};
 	});
 
 	const isCreditCard = xml.includes("<CREDITCARDMSGSRSV1>");
 
-	return { source, accountNumber, period, isCreditCard, transactions };
+	return {
+		source,
+		accountNumber,
+		period,
+		isCreditCard,
+		transactions: ensureUniqueExternalIds(transactions),
+	};
+}
+
+const INSTALLMENT_PATTERN = /Parcela\s+(\d+)\s*\/\s*\d+/i;
+
+// Alguns bancos (ex.: Nubank) usam o mesmo FITID em todas as parcelas de uma
+// compra, em faturas diferentes. Sem o número da parcela no id, a parcela do mês
+// seguinte seria tratada como "já importada" e descartada.
+export function buildInstallmentExternalId(
+	fitId: string | null,
+	description: string,
+): string | null {
+	if (!fitId) return null;
+	const installment = description.match(INSTALLMENT_PATTERN);
+	return installment ? `${fitId}:parcela-${installment[1]}` : fitId;
 }
