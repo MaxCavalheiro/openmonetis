@@ -2,6 +2,7 @@
 
 import { RiDownloadLine, RiUploadCloud2Line } from "@remixicon/react";
 import { useRef, useState } from "react";
+import { parseCsv } from "@/shared/lib/import/csv/csv-parser";
 import { parseOfx } from "@/shared/lib/import/ofx-parser";
 import type { ImportStatement } from "@/shared/lib/import/types";
 import { generateXlsTemplate, parseXls } from "@/shared/lib/import/xls-parser";
@@ -19,9 +20,25 @@ export function UploadZone({ onParsed }: UploadZoneProps) {
 		setError(null);
 		const isOfx = /\.(ofx|qfx)$/i.test(file.name);
 		const isXls = /\.(xlsx|xls)$/i.test(file.name);
+		const isCsv = /\.csv$/i.test(file.name);
 
-		if (!isOfx && !isXls) {
-			setError("Formato não suportado. Use .ofx, .qfx, .xlsx ou .xls.");
+		if (!isOfx && !isXls && !isCsv) {
+			setError("Formato não suportado. Use .ofx, .qfx, .csv, .xlsx ou .xls.");
+			return;
+		}
+
+		if (isCsv) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				try {
+					onParsed(parseCsv(e.target?.result as ArrayBuffer));
+				} catch (err) {
+					setError(
+						err instanceof Error ? err.message : "Não foi possível ler o CSV.",
+					);
+				}
+			};
+			reader.readAsArrayBuffer(file);
 			return;
 		}
 
@@ -103,7 +120,7 @@ export function UploadZone({ onParsed }: UploadZoneProps) {
 						Arraste um arquivo aqui ou clique para selecionar
 					</p>
 					<p className="mt-1 text-muted-foreground text-xs">
-						.ofx · .qfx · .xlsx · .xls
+						.ofx · .qfx · .csv · .xlsx · .xls
 					</p>
 				</div>
 			</button>
@@ -111,7 +128,7 @@ export function UploadZone({ onParsed }: UploadZoneProps) {
 			<input
 				ref={inputRef}
 				type="file"
-				accept=".ofx,.qfx,.xlsx,.xls"
+				accept=".ofx,.qfx,.csv,.xlsx,.xls"
 				className="hidden"
 				onChange={(e) => {
 					const file = e.target.files?.[0];

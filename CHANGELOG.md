@@ -7,6 +7,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+### Adicionado
+
+- Importação: suporte a arquivos `.csv` com perfis por banco em `src/shared/lib/import/csv/profiles/` (XP extrato da conta, XP fatura do cartão e um perfil genérico que detecta data/descrição/valor pelo nome da coluna); detecção automática de codificação (UTF-8/BOM ou windows-1252) e separador
+- Importação: conta/cartão pré-selecionado pelo nome do banco detectado no arquivo (ex.: cartão "XP")
+- Importação: rodapé da revisão exibe totais das linhas selecionadas (saídas, créditos e total da fatura para cartão ou saldo do extrato para conta), permitindo conferir com o valor do banco antes de importar
+
 ### Removido
 
 - Privacidade: `@vercel/analytics` e `@vercel/speed-insights` removidos do layout raiz e das dependências
@@ -23,6 +29,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 
+- Importação: memória de categorias não era salva quando a mesma descrição aparecia mais de uma vez no lote (`ON CONFLICT DO UPDATE command cannot affect row a second time`); mapeamentos agora são deduplicados antes do upsert
+- Importação: sugestão automática de categoria passa a usar também os lançamentos já categorizados do usuário (o mais recente vence) quando não há mapeamento salvo
+- Importação: chave de categoria ignora número de parcela (`Parcela n/m`, `ParcN`) e dados bancários de Pix, e agrupa as variações de IOF
+- Importação OFX: parcelas de compras parceladas agora usam `FITID:parcela-n` como identificador; o Nubank repete o mesmo FITID em todas as parcelas, e a parcela do mês seguinte era marcada como "já importada" e descartada. Lançamentos já gravados precisam do mesmo sufixo (ajuste feito via SQL na instância local)
+- Importação OFX: FITIDs repetidos no mesmo arquivo (Nubank usa o FITID da compra também no IOF) agora recebem sufixo `#n`; antes a tabela de revisão embaralhava/duplicava linhas por chave React repetida e os IOFs eram descartados silenciosamente pelo índice único `(userId, ofxFitId)`
 - Docker: migrations na inicialização do container chamam `drizzle-kit push` diretamente; `pnpm db:push` falhava com `ERR_PNPM_IGNORED_BUILDS` e as tabelas não eram criadas
 - Build: adicionado `babel-plugin-react-compiler` como dependência de desenvolvimento, exigido por `reactCompiler: true` no `next.config.ts`
 

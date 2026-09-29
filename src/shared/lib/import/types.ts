@@ -11,5 +11,6 @@ export type ImportStatement = {
 	accountNumber: string | null; // ACCTID
 	period: { from: string; to: string } | null; // YYYY-MM-DD
 	isCreditCard: boolean; // true = CREDITCARDMSGSRSV1
+	bankName?: string; // nome curto do banco (perfis CSV), usado para pré-selecionar conta/cartão
 	transactions: ImportedTransaction[];
 };

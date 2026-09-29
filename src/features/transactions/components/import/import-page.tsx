@@ -33,6 +33,7 @@ import {
 import { UploadZone } from "@/features/transactions/components/import/upload-zone";
 import type { SelectOption } from "@/features/transactions/components/types";
 import { normalizeDescriptionKey } from "@/features/transactions/lib/import-utils";
+import MoneyValues from "@/shared/components/money-values";
 import { Button } from "@/shared/components/ui/button";
 import {
 	Card,
@@ -97,15 +98,24 @@ export function ImportPage({
 		}
 	}, []);
 
-	// Pré-seleciona cartão ou conta com base no tipo detectado no OFX
+	// Pré-seleciona cartão ou conta com base no tipo detectado no arquivo,
+	// preferindo a opção cujo nome contém o banco (ex.: "XP")
 	useEffect(() => {
 		if (!statement || accountCardValue) return;
-		if (statement.isCreditCard && cardOptions[0]) {
-			setAccountCardValue(encodeAccountCard("card", cardOptions[0].value));
-		} else if (!statement.isCreditCard && accountOptions[0]) {
-			setAccountCardValue(
-				encodeAccountCard("account", accountOptions[0].value),
-			);
+		const bankName = statement.bankName?.toLowerCase();
+		const pick = (options: SelectOption[]) =>
+			(bankName &&
+				options.find((opt) => opt.label.toLowerCase().includes(bankName))) ||
+			options[0];
+
+		if (statement.isCreditCard) {
+			const card = pick(cardOptions);
+			if (card) setAccountCardValue(encodeAccountCard("card", card.value));
+		} else {
+			const account = pick(accountOptions);
+			if (account) {
+				setAccountCardValue(encodeAccountCard("account", account.value));
+			}
 		}
 	}, [statement, cardOptions, accountOptions, accountCardValue]);
 
@@ -155,12 +165,24 @@ export function ImportPage({
 
 	const isCard = accountCardValue?.startsWith("card:") ?? false;
 
-	const { selectedRows, duplicateCount, uncategorizedCount } = useMemo(() => {
+	const {
+		selectedRows,
+		duplicateCount,
+		uncategorizedCount,
+		expenseTotal,
+		incomeTotal,
+	} = useMemo(() => {
 		const selected = rows.filter((r) => r.selected);
+		const sumCents = (type: ReviewRow["transactionType"]) =>
+			selected
+				.filter((r) => r.transactionType === type)
+				.reduce((acc, r) => acc + Math.round(r.amount * 100), 0) / 100;
 		return {
 			selectedRows: selected,
 			duplicateCount: rows.filter((r) => r.isDuplicate).length,
 			uncategorizedCount: selected.filter((r) => !r.categoryId).length,
+			expenseTotal: sumCents("expense"),
+			incomeTotal: sumCents("income"),
 		};
 	}, [rows]);
 
@@ -248,8 +270,8 @@ export function ImportPage({
 					<div>
 						<CardTitle>Importar extrato</CardTitle>
 						<CardDescription>
-							Importe transações a partir de um arquivo .ofx ou planilha .xlsx
-							exportado pelo seu banco.
+							Importe transações a partir de um arquivo .ofx, .csv ou planilha
+							.xlsx exportado pelo seu banco.
 						</CardDescription>
 					</div>
 					<ImportSteps current={currentStep} />
@@ -308,6 +330,34 @@ export function ImportPage({
 
 							{/* Sticky footer */}
 							<div className="sticky bottom-0 -mx-6 border-t bg-background px-6 py-4">
+								<div className="mb-3 flex flex-wrap items-center justify-end gap-x-6 gap-y-1 text-sm">
+									<span className="text-muted-foreground">
+										Saídas{" "}
+										<MoneyValues
+											amount={-expenseTotal}
+											className="font-medium text-foreground"
+										/>
+									</span>
+									<span className="text-muted-foreground">
+										Créditos{" "}
+										<MoneyValues
+											amount={incomeTotal}
+											showPositiveSign
+											className="font-medium text-success"
+										/>
+									</span>
+									<span className="text-muted-foreground">
+										{isCard ? "Total da fatura" : "Saldo do extrato"}{" "}
+										<MoneyValues
+											amount={
+												isCard
+													? expenseTotal - incomeTotal
+													: incomeTotal - expenseTotal
+											}
+											className="font-semibold text-base text-foreground"
+										/>
+									</span>
+								</div>
 								<div className="flex items-center justify-between gap-4">
 									<Button
 										variant="outline"
